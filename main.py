@@ -2,6 +2,7 @@ from twilio.rest import Client
 import random
 import os
 import time
+import sys
 from datetime import datetime
 from dotenv import load_dotenv
 from messages import greetings, messages
@@ -13,9 +14,13 @@ from messages import greetings, messages
 # Load environment variables from .env file
 load_dotenv()
 
-# Retrieve secure credentials from environment variables
+# Retrieve Twilio credentials from environment variables
 account_sid = os.getenv("TWILIO_SID")
 auth_token = os.getenv("TWILIO_TOKEN")
+
+# Validate credentials
+if not account_sid or not auth_token:
+    raise ValueError("Twilio credentials not found. Check environment variables.")
 
 # Target phone number (WhatsApp format)
 to_number = "whatsapp:+554198489999"
@@ -32,7 +37,7 @@ today = datetime.today().weekday()
 
 if today >= 5:
     print("Weekend detected. Message will not be sent.")
-    exit()
+    sys.exit()
 
 # =========================
 # RANDOM DELAY (0–60 MINUTES)
@@ -49,7 +54,7 @@ time.sleep(delay_seconds)
 # MESSAGE GENERATION
 # =========================
 
-# Select a random greeting and message
+# Select a random greeting and message from predefined lists
 greeting = random.choice(greetings)
 message = random.choice(messages)
 
@@ -67,4 +72,5 @@ client.messages.create(
     to=to_number
 )
 
-print("Message sent successfully!")
+# Log success message
+print(f"Message sent successfully to {to_number}")
