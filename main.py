@@ -2,50 +2,45 @@ from twilio.rest import Client
 import random
 import os
 from dotenv import load_dotenv
-from messages import saudacoes, mensagens
+from messages import greetings, messages
 
 # =========================
-# CONFIG
+# CONFIGURATION
 # =========================
 
-# Load .env
+# Load environment variables from .env file
 load_dotenv()
 
-# Retrieve safe variables from .env
+# Retrieve secure credentials
 account_sid = os.getenv("TWILIO_SID")
 auth_token = os.getenv("TWILIO_TOKEN")
 
-# Your phone number 
-numero = "whatsapp:+554198489999"
+# Target phone number (WhatsApp format)
+to_number = "whatsapp:+554198489999"
 
+# Initialize Twilio client
 client = Client(account_sid, auth_token)
 
 # =========================
-# LISTS
+# MESSAGE GENERATION
 # =========================
 
+# Select random greeting and message
+greeting = random.choice(greetings)
+message = random.choice(messages)
 
-
-# =========================
-# GERAR MENSAGEM
-# =========================
-
-saudacao = random.choice(saudacoes)
-mensagem_random = random.choice(mensagens)
-
-mensagem = f"{saudacao}\n{mensagem_random}"
-
-print("Mensagem gerada:\n")
-print(mensagem)
+# Combine final message
+final_message = f"{greeting} {message}"
 
 # =========================
-# ENVIO
+# SEND MESSAGE
 # =========================
 
-message = client.messages.create(
-    body=mensagem,
-    from_="whatsapp:+14155238886",
-    to=numero
+# Send WhatsApp message via Twilio
+client.messages.create(
+    body=final_message,
+    from_="whatsapp:+14155238886",  # Twilio sandbox number
+    to=to_number
 )
 
-print("\nMensagem enviada com sucesso!")
+print("Message sent successfully!")

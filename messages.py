@@ -1,4 +1,4 @@
-saudacoes = [
+greetings = [
     "Bom dia, princess!",
     "Bom dia, meu bem!",
     "Bom dia, linda! ",
@@ -27,7 +27,7 @@ saudacoes = [
     "Bom dia"
 ]
 
-mensagens = [
+messages = [
     "Você faz minha vida melhor ☺️",
     "Você faz minha vida mais feliz ☺️",
     "Te amo mais a cada dia 🤍",
