@@ -38,7 +38,7 @@ final_message = f"{greeting} {message}"
 # =========================
 
 # Wait between 0 and 60 minutes (in seconds)
-delay = random.randint(0, 3600)
+delay = random.randint(5, 10)
 print(f"Waiting {delay} seconds before sending...")
 time.sleep(delay)
 
