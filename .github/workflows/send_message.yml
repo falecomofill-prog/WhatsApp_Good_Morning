@@ -2,14 +2,14 @@ name: Send WhatsApp Message
 
 on:
   schedule:
-    - cron: '51 10 * * 1-5'  # 07:51 Brazil
-    - cron: '02 11 * * 1-5'  # 08:02 Brazil
-    - cron: '13 11 * * 1-5'  # 08:13 Brazil
-    - cron: '24 11 * * 1-5'  # 08:24 Brazil
-    - cron: '35 11 * * 1-5'  # 08:35 Brazil
-    - cron: '46 11 * * 1-5'  # 08:46 Brazil
-    - cron: '57 11 * * 1-5'  # 08:57 Brazil
-    - cron: '08 12 * * 1-5'  # 09:08 Brazil
+    - cron: '51 10 * * 1-5'
+    - cron: '02 11 * * 1-5'
+    - cron: '13 11 * * 1-5'
+    - cron: '24 11 * * 1-5'
+    - cron: '35 11 * * 1-5'
+    - cron: '46 11 * * 1-5'
+    - cron: '57 11 * * 1-5'
+    - cron: '08 12 * * 1-5'
   workflow_dispatch:
 
 jobs:
@@ -33,10 +33,6 @@ jobs:
           TWILIO_SID: ${{ secrets.TWILIO_SID }}
           TWILIO_TOKEN: ${{ secrets.TWILIO_TOKEN }}
         run: python -u main.py
-
-      # =========================
-      # UPDATE STATE FILE
-      # =========================
 
       - name: Commit state files
         run: |

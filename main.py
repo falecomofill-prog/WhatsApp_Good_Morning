@@ -40,25 +40,28 @@ now = datetime.now(tz)
 current_time = now.strftime("%H:%M")
 today_date = now.strftime("%Y-%m-%d")
 
-# Allowed execution times (must match GitHub Actions schedule)
+# Allowed execution times
 allowed_times = ["07:51", "08:02", "08:13", "08:24", "08:35", "08:46", "08:57", "09:08"]
 
 # =========================
 # DAILY SCHEDULING LOGIC
 # =========================
 
-# File used to store the randomly selected time for the day
 schedule_file = "schedule.txt"
 
-# Read existing schedule if file exists
+saved_date, scheduled_time = None, None
+
 if os.path.exists(schedule_file):
     with open(schedule_file, "r") as file:
-        saved_date, scheduled_time = file.read().strip().split("|")
-else:
-    saved_date, scheduled_time = None, None
+        content = file.read().strip()
 
-# If it's a new day, generate and persist a new random time
-if saved_date != today_date:
+        if "|" in content:
+            saved_date, scheduled_time = content.split("|")
+        else:
+            print("Invalid schedule file format. Resetting...")
+
+# Generate new schedule if needed
+if saved_date != today_date or not scheduled_time:
     scheduled_time = random.choice(allowed_times)
 
     with open(schedule_file, "w") as file:
@@ -70,24 +73,20 @@ if saved_date != today_date:
 # EXECUTION DECISION (WITH TOLERANCE)
 # =========================
 
-# Convert scheduled time to datetime
 scheduled_datetime = datetime.strptime(scheduled_time, "%H:%M").replace(
     year=now.year, month=now.month, day=now.day, tzinfo=tz
 )
 
-# Calculate time difference in seconds
 time_difference = abs((now - scheduled_datetime).total_seconds())
 
-# Allow execution within a 2-minute window (120 seconds)
 if time_difference > 120:
-    print(f"Outside allowed time window. Scheduled: {scheduled_time} | Current: {current_time}")
+    print(f"Outside allowed window. Scheduled: {scheduled_time} | Now: {current_time}")
     sys.exit()
 
 # =========================
 # DAILY SEND CONTROL
 # =========================
 
-# File used to ensure only one message is sent per day
 control_file = "last_sent.txt"
 
 if os.path.exists(control_file):
@@ -102,11 +101,9 @@ if os.path.exists(control_file):
 # MESSAGE GENERATION
 # =========================
 
-# Select random greeting and message
 greeting = random.choice(greetings)
 message = random.choice(messages)
 
-# Format final message with spacing
 final_message = f"{greeting}\n{message}"
 
 # =========================
@@ -125,7 +122,6 @@ print("Message sent successfully!")
 # STATE UPDATE
 # =========================
 
-# Record today's date to prevent duplicate sends
 with open(control_file, "w") as file:
     file.write(today_date)
 
