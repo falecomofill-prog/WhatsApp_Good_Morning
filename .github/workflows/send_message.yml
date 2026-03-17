@@ -2,7 +2,12 @@ name: Send WhatsApp Message
 
 on:
   schedule:
-    - cron: '30 10 * * *'  # 07:30 AM (Brazil time - UTC-3)
+    - cron: '55 10 * * 1-5'  # 07:55 Brazil (UTC-3)
+    - cron: '15 11 * * 1-5'  # 08:15 Brazil
+    - cron: '25 11 * * 1-5'  # 08:25 Brazil
+    - cron: '36 11 * * 1-5'  # 08:36 Brazil
+    - cron: '46 11 * * 1-5'  # 08:46 Brazil
+    - cron: '56 11 * * 1-5'  # 08:56 Brazil
   workflow_dispatch:  # allows manual execution
 
 jobs:
@@ -25,4 +30,16 @@ jobs:
         env:
           TWILIO_SID: ${{ secrets.TWILIO_SID }}
           TWILIO_TOKEN: ${{ secrets.TWILIO_TOKEN }}
-        run: python main.py
+        run: python -u main.py
+
+      # =========================
+      # UPDATE CONTROL FILE
+      # =========================
+
+      - name: Commit last sent date
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add last_sent.txt
+          git commit -m "update last sent date" || echo "No changes"
+          git push

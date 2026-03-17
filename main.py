@@ -1,7 +1,6 @@
 from twilio.rest import Client
 import random
 import os
-import time
 import sys
 from datetime import datetime
 from dotenv import load_dotenv
@@ -33,22 +32,31 @@ client = Client(account_sid, auth_token)
 # =========================
 
 # Check if today is a weekday (0 = Monday, 6 = Sunday)
-today = datetime.today().weekday()
+today_weekday = datetime.today().weekday()
 
-if today >= 5:
+if today_weekday >= 5:
     print("Weekend detected. Message will not be sent.")
     sys.exit()
 
 # =========================
-# RANDOM DELAY (0–60 MINUTES)
+# DAILY EXECUTION CONTROL
 # =========================
 
-# Generate a random delay between 0 and 60 minutes
-delay_minutes = random.randint(0, 60)
-delay_seconds = delay_minutes * 60
+# File used to track the last date a message was sent
+control_file = "last_sent.txt"
 
-print(f"Waiting {delay_minutes} minutes before sending the message...")
-time.sleep(delay_seconds)
+# Get today's date in YYYY-MM-DD format
+today_date = datetime.today().strftime("%Y-%m-%d")
+
+# Check if the control file exists
+if os.path.exists(control_file):
+    with open(control_file, "r") as file:
+        last_sent_date = file.read().strip()
+
+    # If message was already sent today, skip execution
+    if last_sent_date == today_date:
+        print("Message already sent today. Skipping execution.")
+        sys.exit()
 
 # =========================
 # MESSAGE GENERATION
@@ -59,7 +67,7 @@ greeting = random.choice(greetings)
 message = random.choice(messages)
 
 # Combine greeting and message into a formatted message
-final_message = f"{greeting}\n{message}"
+final_message = f"{greeting}\n\n{message}"
 
 # =========================
 # SEND MESSAGE
@@ -74,3 +82,13 @@ client.messages.create(
 
 # Log success message
 print(f"Message sent successfully to {to_number}")
+
+# =========================
+# UPDATE CONTROL FILE
+# =========================
+
+# Save today's date to prevent multiple sends in the same day
+with open(control_file, "w") as file:
+    file.write(today_date)
+
+print("Control file updated successfully.")
