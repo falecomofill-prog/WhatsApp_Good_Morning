@@ -2,13 +2,15 @@ name: Send WhatsApp Message
 
 on:
   schedule:
-    - cron: '55 10 * * 1-5'  # 07:55 Brazil (UTC-3)
-    - cron: '15 11 * * 1-5'  # 08:15 Brazil
-    - cron: '25 11 * * 1-5'  # 08:25 Brazil
-    - cron: '36 11 * * 1-5'  # 08:36 Brazil
+    - cron: '51 10 * * 1-5'  # 07:51 Brazil
+    - cron: '02 11 * * 1-5'  # 08:02 Brazil
+    - cron: '13 11 * * 1-5'  # 08:13 Brazil
+    - cron: '24 11 * * 1-5'  # 08:24 Brazil
+    - cron: '35 11 * * 1-5'  # 08:35 Brazil
     - cron: '46 11 * * 1-5'  # 08:46 Brazil
-    - cron: '56 11 * * 1-5'  # 08:56 Brazil
-  workflow_dispatch:  # allows manual execution
+    - cron: '57 11 * * 1-5'  # 08:57 Brazil
+    - cron: '08 12 * * 1-5'  # 09:08 Brazil
+  workflow_dispatch:
 
 jobs:
   run-script:
@@ -33,13 +35,13 @@ jobs:
         run: python -u main.py
 
       # =========================
-      # UPDATE CONTROL FILE
+      # UPDATE STATE FILE
       # =========================
 
-      - name: Commit last sent date
+      - name: Commit state files
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
-          git add last_sent.txt
-          git commit -m "update last sent date" || echo "No changes"
+          git add last_sent.txt schedule.txt
+          git commit -m "update state files" || echo "No changes"
           git push

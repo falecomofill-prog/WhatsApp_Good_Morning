@@ -3,6 +3,7 @@ import random
 import os
 import sys
 from datetime import datetime
+import pytz
 from dotenv import load_dotenv
 from messages import greetings, messages
 
@@ -28,32 +29,71 @@ to_number = "whatsapp:+554198489999"
 client = Client(account_sid, auth_token)
 
 # =========================
-# WEEKDAY VALIDATION
+# TIME CONFIGURATION
 # =========================
 
-# Check if today is a weekday (0 = Monday, 6 = Sunday)
-today_weekday = datetime.today().weekday()
+# Define Brazil timezone
+tz = pytz.timezone("America/Sao_Paulo")
 
-if today_weekday >= 5:
-    print("Weekend detected. Message will not be sent.")
+# Get current date and time in Brazil timezone
+now = datetime.now(tz)
+current_time = now.strftime("%H:%M")
+today_date = now.strftime("%Y-%m-%d")
+
+# Allowed execution times (must match GitHub Actions schedule)
+allowed_times = ["07:51", "08:02", "08:13", "08:24", "08:35", "08:46", "08:57", "09:08"]
+
+# =========================
+# DAILY SCHEDULING LOGIC
+# =========================
+
+# File used to store the randomly selected time for the day
+schedule_file = "schedule.txt"
+
+# Read existing schedule if file exists
+if os.path.exists(schedule_file):
+    with open(schedule_file, "r") as file:
+        saved_date, scheduled_time = file.read().strip().split("|")
+else:
+    saved_date, scheduled_time = None, None
+
+# If it's a new day, generate and persist a new random time
+if saved_date != today_date:
+    scheduled_time = random.choice(allowed_times)
+
+    with open(schedule_file, "w") as file:
+        file.write(f"{today_date}|{scheduled_time}")
+
+    print(f"New scheduled time for today: {scheduled_time}")
+
+# =========================
+# EXECUTION DECISION (WITH TOLERANCE)
+# =========================
+
+# Convert scheduled time to datetime
+scheduled_datetime = datetime.strptime(scheduled_time, "%H:%M").replace(
+    year=now.year, month=now.month, day=now.day, tzinfo=tz
+)
+
+# Calculate time difference in seconds
+time_difference = abs((now - scheduled_datetime).total_seconds())
+
+# Allow execution within a 2-minute window (120 seconds)
+if time_difference > 120:
+    print(f"Outside allowed time window. Scheduled: {scheduled_time} | Current: {current_time}")
     sys.exit()
 
 # =========================
-# DAILY EXECUTION CONTROL
+# DAILY SEND CONTROL
 # =========================
 
-# File used to track the last date a message was sent
+# File used to ensure only one message is sent per day
 control_file = "last_sent.txt"
 
-# Get today's date in YYYY-MM-DD format
-today_date = datetime.today().strftime("%Y-%m-%d")
-
-# Check if the control file exists
 if os.path.exists(control_file):
     with open(control_file, "r") as file:
         last_sent_date = file.read().strip()
 
-    # If message was already sent today, skip execution
     if last_sent_date == today_date:
         print("Message already sent today. Skipping execution.")
         sys.exit()
@@ -62,33 +102,31 @@ if os.path.exists(control_file):
 # MESSAGE GENERATION
 # =========================
 
-# Select a random greeting and message from predefined lists
+# Select random greeting and message
 greeting = random.choice(greetings)
 message = random.choice(messages)
 
-# Combine greeting and message into a formatted message
-final_message = f"{greeting}\n\n{message}"
+# Format final message with spacing
+final_message = f"{greeting}\n{message}"
 
 # =========================
 # SEND MESSAGE
 # =========================
 
-# Send WhatsApp message using Twilio API
 client.messages.create(
     body=final_message,
-    from_="whatsapp:+14155238886",  # Twilio sandbox number
+    from_="whatsapp:+14155238886",
     to=to_number
 )
 
-# Log success message
-print(f"Message sent successfully to {to_number}")
+print("Message sent successfully!")
 
 # =========================
-# UPDATE CONTROL FILE
+# STATE UPDATE
 # =========================
 
-# Save today's date to prevent multiple sends in the same day
+# Record today's date to prevent duplicate sends
 with open(control_file, "w") as file:
     file.write(today_date)
 
-print("Control file updated successfully.")
+print("Execution state updated successfully.")
