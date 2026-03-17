@@ -1,6 +1,7 @@
 from twilio.rest import Client
 import random
 import os
+import time
 from dotenv import load_dotenv
 from messages import greetings, messages
 
@@ -31,6 +32,15 @@ message = random.choice(messages)
 
 # Combine final message
 final_message = f"{greeting} {message}"
+
+# =========================
+# RANDOM DELAY
+# =========================
+
+# Wait between 0 and 60 minutes (in seconds)
+delay = random.randint(0, 3600)
+print(f"Waiting {delay} seconds before sending...")
+time.sleep(delay)
 
 # =========================
 # SEND MESSAGE
