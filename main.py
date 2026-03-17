@@ -45,7 +45,7 @@ if today >= 5:
 
 # Generate a random delay between 0 and 60 minutes
 delay_minutes = random.randint(0, 60)
-delay_seconds = 5
+delay_seconds = delay_minutes * 60
 
 print(f"Waiting {delay_minutes} minutes before sending the message...")
 time.sleep(delay_seconds)
