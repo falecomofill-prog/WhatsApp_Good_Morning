@@ -40,8 +40,25 @@ now = datetime.now(tz)
 current_time = now.strftime("%H:%M")
 today_date = now.strftime("%Y-%m-%d")
 
-# Allowed execution times
-allowed_times = ["07:51", "08:02", "08:13", "08:24", "08:35", "08:46", "08:57", "09:08"]
+# =========================
+# EXECUTION WINDOW (07:30 → 08:30)
+# =========================
+
+start_window = datetime.strptime("07:30", "%H:%M").time()
+end_window = datetime.strptime("08:30", "%H:%M").time()
+
+if not (start_window <= now.time() <= end_window):
+    print(f"Outside execution window. Now: {current_time}")
+    sys.exit()
+
+# =========================
+# ALLOWED TIMES (SCHEDULER)
+# =========================
+
+allowed_times = [
+    "07:30", "07:40", "07:50",
+    "08:00", "08:10", "08:20", "08:30"
+]
 
 # =========================
 # DAILY SCHEDULING LOGIC
@@ -70,21 +87,22 @@ if saved_date != today_date or not scheduled_time:
     print(f"New scheduled time for today: {scheduled_time}")
 
 # =========================
-# EXECUTION DECISION (WITH TOLERANCE)
+# EXECUTION DECISION (TOLERANCE)
 # =========================
 
-scheduled_datetime = datetime.strptime(scheduled_time, "%H:%M").replace(
-    year=now.year, month=now.month, day=now.day, tzinfo=tz
+scheduled_naive = datetime.strptime(scheduled_time, "%H:%M")
+scheduled_datetime = tz.localize(
+    scheduled_naive.replace(year=now.year, month=now.month, day=now.day)
 )
 
 time_difference = abs((now - scheduled_datetime).total_seconds())
 
-if time_difference > 120:
+if time_difference > 600:  # 10 minutos
     print(f"Outside allowed window. Scheduled: {scheduled_time} | Now: {current_time}")
     sys.exit()
 
 # =========================
-# DAILY SEND CONTROL
+# DUPLICATE CONTROL
 # =========================
 
 control_file = "last_sent.txt"
@@ -126,3 +144,33 @@ with open(control_file, "w") as file:
     file.write(today_date)
 
 print("Execution state updated successfully.")
+
+# =========================
+# LOGGING (history.json)
+# =========================
+
+history_file = "history.json"
+
+log_entry = {
+    "date": today_date,
+    "time": current_time,
+    "scheduled_time": scheduled_time,
+    "status": "sent",
+    "message": final_message
+}
+
+if os.path.exists(history_file):
+    with open(history_file, "r") as f:
+        try:
+            history = json.load(f)
+        except:
+            history = []
+else:
+    history = []
+
+history.append(log_entry)
+
+with open(history_file, "w") as f:
+    json.dump(history, f, indent=2)
+
+print("Log updated successfully.")
