@@ -4,6 +4,7 @@ import os
 import sys
 from datetime import datetime
 import pytz
+import json
 from dotenv import load_dotenv
 from messages import greetings, messages
 
@@ -47,9 +48,9 @@ today_date = now.strftime("%Y-%m-%d")
 start_window = datetime.strptime("07:30", "%H:%M").time()
 end_window = datetime.strptime("08:30", "%H:%M").time()
 
-if not (start_window <= now.time() <= end_window):
-    print(f"Outside execution window. Now: {current_time}")
-    sys.exit()
+#if not (start_window <= now.time() <= end_window):
+#    print(f"Outside execution window. Now: {current_time}")
+#    sys.exit()
 
 # =========================
 # ALLOWED TIMES (SCHEDULER)
