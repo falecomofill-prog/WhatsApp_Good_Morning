@@ -67,6 +67,9 @@ MODE=TEST
 
 ## Project Structure
 ├── main.py                  # Core application logic
+
+
+
 ├── config.py                # Configuration management
 ├── messages.py              # Message templates
 ├── requirements.txt         # Dependencies
