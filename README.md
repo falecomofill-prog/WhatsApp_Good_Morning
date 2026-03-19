@@ -67,16 +67,20 @@ MODE=TEST
 
 ## Project Structure
 ├── main.py                  # Core application logic
-
-
-
 ├── config.py                # Configuration management
+
 ├── messages.py              # Message templates
+
 ├── requirements.txt         # Dependencies
+
 ├── schedule.txt             # Daily scheduled time
+
 ├── last_sent.txt            # Idempotency control
+
 ├── history.json             # Execution logs
+
 └── .github/workflows/
+
     └── send_message.yml     # Cloud scheduler (GitHub Actions)
 
 ## Setup
