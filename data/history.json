@@ -1,0 +1,34 @@
+[
+  {
+    "date": "2026-03-25",
+    "time": "12:41",
+    "status": "schedule_created",
+    "scheduled_time": "07:40",
+    "message": null,
+    "detail": "New daily schedule created"
+  },
+  {
+    "date": "2026-03-25",
+    "time": "12:41",
+    "status": "sent",
+    "scheduled_time": "07:40",
+    "message": "Bom dia!!\nQue seu dia seja tão lindo quanto seu sorriso",
+    "detail": "Message sent successfully"
+  },
+  {
+    "date": "2026-03-25",
+    "time": "13:14",
+    "status": "sent",
+    "scheduled_time": "07:40",
+    "message": "Bom dia!!\nVocê faz minha vida melhor ☺️",
+    "detail": "Message sent successfully"
+  },
+  {
+    "date": "2026-03-25",
+    "time": "14:37",
+    "status": "sent",
+    "scheduled_time": "07:40",
+    "message": "Bom dia, princess!\nAmo vc",
+    "detail": "Message sent successfully"
+  }
+]

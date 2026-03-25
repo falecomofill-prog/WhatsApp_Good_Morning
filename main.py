@@ -8,6 +8,7 @@ from scheduler import (
     get_now,
     get_or_create_daily_schedule,
     get_today_date,
+    is_allowed_weekday,
     is_within_execution_window,
     is_within_tolerance,
 )
@@ -20,6 +21,16 @@ def main() -> None:
     today_date = get_today_date()
     current_time = get_current_time()
     now = get_now()
+
+    if MODE == "PROD" and not is_allowed_weekday(now):
+        print("[INFO] Today is not an allowed weekday.")
+        log_event(
+            date=today_date,
+            time=current_time,
+            status="skipped_day",
+            detail="Today is not an allowed weekday",
+        )
+        sys.exit()
 
     scheduled_time, created_new_schedule = get_or_create_daily_schedule()
 

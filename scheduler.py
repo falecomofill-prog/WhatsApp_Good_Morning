@@ -2,24 +2,18 @@ import random
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
+from config_loader import load_settings
 from storage import read_schedule, write_schedule
 
 
-TZ = ZoneInfo("America/Sao_Paulo")
+settings = load_settings()
 
-ALLOWED_TIMES = [
-    "07:30",
-    "07:40",
-    "07:50",
-    "08:00",
-    "08:10",
-    "08:20",
-    "08:30",
-]
-
-START_WINDOW = "07:30"
-END_WINDOW = "08:30"
-TOLERANCE_SECONDS = 600
+TZ = ZoneInfo(settings["timezone"])
+START_WINDOW = settings["start_window"]
+END_WINDOW = settings["end_window"]
+TOLERANCE_SECONDS = settings["tolerance_seconds"]
+ALLOWED_TIMES = settings["allowed_times"]
+ALLOWED_WEEKDAYS = settings["allowed_weekdays"]
 
 
 def get_now() -> datetime:
@@ -32,6 +26,17 @@ def get_today_date() -> str:
 
 def get_current_time() -> str:
     return get_now().strftime("%H:%M")
+
+
+def get_current_weekday() -> int:
+    return get_now().weekday()
+
+
+def is_allowed_weekday(now: datetime | None = None) -> bool:
+    if now is None:
+        now = get_now()
+
+    return now.weekday() in ALLOWED_WEEKDAYS
 
 
 def time_string_to_datetime(time_str: str, reference: datetime | None = None) -> datetime:

@@ -1,0 +1,18 @@
+{
+  "timezone": "America/Sao_Paulo",
+  "start_window": "07:30",
+  "end_window": "08:30",
+  "tolerance_seconds": 600,
+  "allowed_times": [
+    "07:30",
+    "07:40",
+    "07:50",
+    "08:00",
+    "08:10",
+    "08:20",
+    "08:30"
+  ],
+  "allowed_weekdays": [0, 1, 2, 3, 4],
+  "allowed_weekdays_note": "0 to 4 = Monday through Friday, 5 and 6 = Saturday and Sunday",
+  "important_note": "To change how often GitHub Actions runs, edit .github/workflows/send_message.yml"
+}
