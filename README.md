@@ -1,158 +1,211 @@
-# WhatsApp Automated Messaging System  
-  
-A cloud-based automation system that sends personalized WhatsApp messages using the Twilio API.
+# 🚀 WhatsApp Automated Messaging System
 
-This project runs fully in the cloud via GitHub Actions and was designed with a focus on **resilience**, **reliability**, and **clean engineering practices**.
+A cloud-based automation system that sends **randomized WhatsApp messages** using the Twilio API.
 
-## Features
+> ⚙️ Designed for **reliability**, **clean architecture**, and **easy customization**  
+> ☁️ Runs automatically via **GitHub Actions**
 
-- Automated WhatsApp message delivery via Twilio API;
-- Fully serverless execution (GitHub Actions);
-- Intelligent daily scheduling with randomized execution;
-- Execution restricted to weekdays (Monday–Friday);
-- Time window control with tolerance handling;
-- Duplicate prevention using state persistence (idempotency);
-- Graceful handling of corrupted or missing state files;
-- Secure configuration using environment variables;
-- Structured logging (`history.json`) for traceability;
-- Environment-based behavior (`TEST` vs `PROD` mode).
+---
 
-## Architecture
-  
-- **Python** → Core application logic;
-- **Twilio API** → Message delivery service;
-- **GitHub Actions** → Scheduler and execution engine;
-- **Flat files (TXT/JSON)** → Lightweight state persistence.
+# ✨ Features
 
-## Scheduling Logic
-  
-The system implements a resilient scheduling strategy:
+- 📲 Automated WhatsApp message delivery via Twilio API
+- ☁️ Cloud execution with GitHub Actions
+- 🎲 Daily randomized schedule selection
+- 📅 Weekday-only execution
+- ⏱️ Time window validation with tolerance
+- 🚫 Duplicate message prevention
+- 🗂️ Persistent execution state
+- 📊 Structured logging system
+- 🔁 Environment modes (`TEST` / `PROD`)
+- 📝 Editable message templates (`.txt`)
+- 🧱 Modular and scalable architecture
 
-- Multiple execution triggers per day (via cron);
-- A **random execution time is selected daily**;
-- Execution only occurs if within a tolerance window (±10 minutes);
-- Ensures **exactly one message per day**;
-- Designed to tolerate delays in GitHub Actions execution.
+---
 
-## Security
-  
-- All credentials stored in environment variables;
-- `.env` file excluded via `.gitignore`;
-- No sensitive data hardcoded;
-- Phone numbers and API credentials externalized.
+# 📁 Project Structure
 
-## Configuration Management
+WhatsApp_Good_Morning/  
+├── .github/  
+│   └── workflows/  
+│       └── send_message.yml  
+├── config/  
+│   ├── greetings.txt  
+│   └── messages.txt  
+├── data/  
+│   ├── history.json  
+│   ├── last_sent.txt  
+│   └── schedule.txt  
+├── config.py  
+├── logger.py  
+├── main.py  
+├── messaging.py  
+├── scheduler.py  
+├── storage.py  
+├── requirements.txt  
+├── README.md  
+└── .gitignore
 
-The project uses a dedicated `config.py` module to centralize configuration:
+---
 
-- Loads environment variables;
-- Validates required credentials;
-- Formats Twilio-compatible values;
-- Decouples configuration from business logic.
+# 🧠 Architecture
 
-## Execution Modes
+|Module|Responsibility|
+|---|---|
+|`main.py`|Application orchestration|
+|`scheduler.py`|Schedule generation & validation|
+|`storage.py`|State persistence|
+|`messaging.py`|Message loading & Twilio sending|
+|`logger.py`|Structured logging|
+|`config.py`|Environment loading & validation|
 
-The system supports two execution modes:
+---
 
-| Mode | Behavior |
-|------|--------|
-| `PROD` | Enforces time window, tolerance, and duplicate prevention |
-| `TEST` | Ignores execution restrictions for development/testing |
+# 📝 Message Customization
 
-Set via `.env`:
+Messages are fully customizable via text files:
 
-```.env
+config/greetings.txt  
+config/messages.txt
+
+Each line = one possible message.
+
+### Example
+
+#### greetings.txt
+
+Good morning!  
+Hello, good morning!  
+Have a wonderful morning!
+
+#### messages.txt
+
+Wishing you a productive and positive day ahead.  
+May today bring good energy and great moments.
+
+> 💡 No code changes required — just edit the files
+
+---
+
+# ⚙️ Execution Modes
+
+|Mode|Behavior|
+|---|---|
+|🟢 PROD|Enforces schedule, validation, and duplicate prevention|
+|🟡 TEST|Bypasses restrictions for development|
+
+---
+
+# 🔐 Environment Variables
+
+Create a `.env` file:
+
+TWILIO_SID=your_sid  
+TWILIO_TOKEN=your_token  
+TWILIO_WHATSAPP_NUMBER=+14155238886  
+MY_WHATSAPP_NUMBER=+5511999999999  
 MODE=TEST
-```
 
-## Project Structure
-├── main.py                  # Core application logic
-├── config.py                # Configuration management
+---
 
-├── messages.py              # Message templates
+# 🛠️ Installation
 
-├── requirements.txt         # Dependencies
+## 1️⃣ Create virtual environment
 
-├── schedule.txt             # Daily scheduled time
-
-├── last_sent.txt            # Idempotency control
-
-├── history.json             # Execution logs
-
-└── .github/workflows/
-
-    └── send_message.yml     # Cloud scheduler (GitHub Actions)
-
-## Setup
-
-1. Create virtual environment
-
-```
 python -m venv venv
-venv\Scripts\activate
-```
 
-2. Install dependencies
+---
 
-```
+## 2️⃣ Activate environment
+
+### 🐧 Git Bash
+
+source venv/Scripts/activate
+
+### 🟦 PowerShell
+
+.\venv\Scripts\Activate.ps1
+
+---
+
+## 3️⃣ Install dependencies
+
 pip install -r requirements.txt
-```
 
-3. Configure environment variables
+---
 
-Create a .env file:
+# ▶️ Local Run
 
-```
-# Twilio credentials
-TWILIO_SID=your_sid
-TWILIO_TOKEN=your_token
-
-# WhatsApp numbers
-TWILIO_WHATSAPP_NUMBER=+14155238886
-MY_WHATSAPP_NUMBER=+5511999999999
-
-# Execution mode
-MODE=TEST
-```
-
-4. Run locally
-
-```
 python main.py
-```
 
-## Deployment
+---
 
-Hosted using GitHub Actions;
-Triggered via cron schedule;
-Runs automatically in the cloud;
-No infrastructure or server required.
+# ☁️ GitHub Actions Deployment
 
-## Logging
+Runs automatically using cron scheduling.
+
+### 🔑 Required Secrets
+
+- `TWILIO_SID`
+- `TWILIO_TOKEN`
+- `TWILIO_WHATSAPP_NUMBER`
+- `MY_WHATSAPP_NUMBER`
+- `MODE`
+
+---
+
+# 📊 Logging
 
 Execution history is stored in:
 
-```
-history.json
-```
+data/history.json
 
-Each entry includes:
+### Possible statuses:
 
-- Date and time;
-- Scheduled execution time;
-- Status (sent, future-ready for skipped, etc.);
-- Message content.
+- `schedule_created`
+- `sent`
+- `skipped_window`
+- `skipped_duplicate`
+- `error`
 
-## Key Engineering Concepts Demonstrated
+---
 
-- Serverless automation;
-- API integration (Twilio);
-- Idempotent system design;
-- Fault-tolerant scheduling;
-- Environment-based configuration;
-- Secure credential handling;
-- Structured logging.
+# 💡 Why this project matters
 
-## Author
+This project demonstrates:
 
-Developed as a personal project focused on backend engineering, automation, and cloud execution.
+- 🔌 API integration (Twilio)
+- ☁️ Cloud automation (GitHub Actions)
+- 🧱 Modular Python architecture
+- ⚙️ Environment-based configuration
+- ♻️ Idempotent execution control
+- 💾 Persistent state management
+- 📊 Structured logging
+
+---
+
+## 🗺️ Roadmap
+
+### v1.1
+
+Planned focus areas:
+
+- Migrate persistence to SQLite
+- Add automated tests
+- Improve error handling
+- Build dashboard / API layer
+
+---
+
+## 📌 Status
+
+✅ **Stable v1.0 release**
+🚧 v1.1 planned
+
+---
+
+## 👨‍💻 Author
+
+Developed by **Fill "Filipe Maschio"**
+
+If this project helped you, give it a star on GitHub ⭐
