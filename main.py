@@ -1,213 +1,106 @@
-# =========================
-# IMPORTS
-# =========================
-
-from twilio.rest import Client
-import random
-import os
 import sys
-import json
-from datetime import datetime
-import pytz
 
-from messages import greetings, messages
-
-from config import (
-    MODE,
-    TWILIO_SID,
-    TWILIO_TOKEN,
-    FROM_NUMBER,
-    TO_NUMBER
+from config import MODE
+from logger import log_event
+from messaging import build_message, send_whatsapp_message
+from scheduler import (
+    get_current_time,
+    get_now,
+    get_or_create_daily_schedule,
+    get_today_date,
+    is_within_execution_window,
+    is_within_tolerance,
 )
-
-# =========================
-# INITIALIZATION
-# =========================
-
-print(f"[INFO] Running in {MODE} mode")
-
-client = Client(TWILIO_SID, TWILIO_TOKEN)
+from storage import read_last_sent_date, write_last_sent_date
 
 
-# =========================
-# TIME CONFIGURATION
-# =========================
+def main() -> None:
+    print(f"[INFO] Running in {MODE} mode")
 
-# Time (Brazil)
-tz = pytz.timezone("America/Sao_Paulo")
+    today_date = get_today_date()
+    current_time = get_current_time()
+    now = get_now()
 
-# Current datetime
-now = datetime.now(tz)
+    scheduled_time, created_new_schedule = get_or_create_daily_schedule()
 
-# Format
-current_time = now.strftime("%H:%M")
-today_date = now.strftime("%Y-%m-%d")
+    if created_new_schedule:
+        print(f"[INFO] New scheduled time for today: {scheduled_time}")
+        log_event(
+            date=today_date,
+            time=current_time,
+            status="schedule_created",
+            scheduled_time=scheduled_time,
+            detail="New daily schedule created",
+        )
 
+    if MODE == "PROD":
+        if not is_within_execution_window(now):
+            print(f"[INFO] Outside execution window. Now: {current_time}")
+            log_event(
+                date=today_date,
+                time=current_time,
+                status="skipped_window",
+                scheduled_time=scheduled_time,
+                detail="Outside execution window",
+            )
+            sys.exit()
 
-# =========================
-# EXECUTION WINDOW CONTROL
-# =========================
+        if not is_within_tolerance(scheduled_time, now):
+            print(f"[INFO] Outside allowed tolerance. Scheduled: {scheduled_time} | Now: {current_time}")
+            log_event(
+                date=today_date,
+                time=current_time,
+                status="skipped_window",
+                scheduled_time=scheduled_time,
+                detail="Outside tolerance window",
+            )
+            sys.exit()
 
-# Define allowed execution window
-start_window = datetime.strptime("07:30", "%H:%M").time()
-end_window = datetime.strptime("08:30", "%H:%M").time()
+    last_sent_date = read_last_sent_date()
 
-# Only enforce in production mode
-if MODE == "PROD":
-    if not (start_window <= now.time() <= end_window):
-        print(f"[INFO] Outside execution window. Now: {current_time}")
-        sys.exit()
-
-
-# =========================
-# SCHEDULING CONFIGURATION
-# =========================
-
-# Possible execution times (randomized daily)
-allowed_times = [
-    "07:30", "07:40", "07:50",
-    "08:00", "08:10", "08:20", "08:30"
-]
-
-
-# =========================
-# DAILY SCHEDULING LOGIC
-# =========================
-
-schedule_file = "schedule.txt"
-
-saved_date, scheduled_time = None, None
-
-# Read existing schedule file
-if os.path.exists(schedule_file):
-    with open(schedule_file, "r") as file:
-        content = file.read().strip()
-
-        # Validate format (date|time)
-        if "|" in content:
-            saved_date, scheduled_time = content.split("|")
-        else:
-            print("[WARN] Invalid schedule format. Resetting...")
-
-# Generate new schedule if: New day or corrupted/missing data
-if saved_date != today_date or not scheduled_time:
-    scheduled_time = random.choice(allowed_times)
-
-    with open(schedule_file, "w") as file:
-        file.write(f"{today_date}|{scheduled_time}")
-
-    print(f"[INFO] New scheduled time for today: {scheduled_time}")
-
-
-# =========================
-# EXECUTION TOLERANCE
-# =========================
-
-# Convert scheduled time into datetime
-scheduled_naive = datetime.strptime(scheduled_time, "%H:%M")
-
-scheduled_datetime = tz.localize(
-    scheduled_naive.replace(year=now.year, month=now.month, day=now.day)
-)
-
-# Calculate time difference in seconds
-time_difference = abs((now - scheduled_datetime).total_seconds())
-
-# Only enforce tolerance in production
-if MODE == "PROD":
-    if time_difference > 600:  # 10 minutes tolerance
-        print(f"[INFO] Outside allowed window. Scheduled: {scheduled_time} | Now: {current_time}")
-        sys.exit()
-
-
-# =========================
-# DUPLICATE CONTROL
-# =========================
-
-control_file = "last_sent.txt"
-
-if os.path.exists(control_file):
-    with open(control_file, "r") as file:
-        last_sent_date = file.read().strip()
-
-    # Prevent duplicate sends in production
     if last_sent_date == today_date and MODE == "PROD":
         print("[INFO] Message already sent today. Skipping execution.")
+        log_event(
+            date=today_date,
+            time=current_time,
+            status="skipped_duplicate",
+            scheduled_time=scheduled_time,
+            detail="Message already sent today",
+        )
         sys.exit()
 
-    elif last_sent_date == today_date:
+    if last_sent_date == today_date and MODE == "TEST":
         print("[INFO] TEST mode: ignoring duplicate check")
 
+    try:
+        final_message = build_message()
+        send_whatsapp_message(final_message)
+        write_last_sent_date(today_date)
 
-# =========================
-# MESSAGE GENERATION
-# =========================
+        print("[INFO] Message sent successfully!")
 
-# Select random greeting and message
-greeting = random.choice(greetings)
-message = random.choice(messages)
+        log_event(
+            date=today_date,
+            time=current_time,
+            status="sent",
+            scheduled_time=scheduled_time,
+            message=final_message,
+            detail="Message sent successfully",
+        )
 
-# Combine final message
-final_message = f"{greeting}\n{message}"
+    except Exception as e:
+        print(f"[ERROR] Failed to send message: {e}")
 
+        log_event(
+            date=today_date,
+            time=current_time,
+            status="error",
+            scheduled_time=scheduled_time,
+            detail=str(e),
+        )
 
-# =========================
-# SEND MESSAGE (TWILIO)
-# =========================
-
-client.messages.create(
-    body=final_message,
-    from_=FROM_NUMBER,
-    to=TO_NUMBER
-)
-
-print("[INFO] Message sent successfully!")
-
-
-# =========================
-# STATE UPDATE
-# =========================
-
-# Save today's date to prevent duplicate sends
-with open(control_file, "w") as file:
-    file.write(today_date)
-
-print("[INFO] State updated")
+        raise
 
 
-# =========================
-# LOGGING SYSTEM (history.json)
-# =========================
-
-history_file = "history.json"
-
-status = "sent"
-
-# Create structured log entry
-log_entry = {
-    "date": today_date,
-    "time": current_time,
-    "scheduled_time": scheduled_time,
-    "status": status,
-    "message": final_message
-}
-
-# Load existing history safely
-if os.path.exists(history_file):
-    with open(history_file, "r") as f:
-        try:
-            history = json.load(f)
-        except Exception as e:
-            print(f"[WARN] Failed to load history: {e}")
-            history = []
-else:
-    history = []
-
-# Append new log entry
-history.append(log_entry)
-
-# Save updated history
-with open(history_file, "w") as f:
-    json.dump(history, f, indent=2)
-
-print("[INFO] Log updated")
+if __name__ == "__main__":
+    main()
