@@ -1,0 +1,18 @@
+[
+  {
+    "date": "2026-03-25",
+    "time": "14:00",
+    "status": "schedule_created",
+    "scheduled_time": "07:30",
+    "message": null,
+    "detail": "New daily schedule created"
+  },
+  {
+    "date": "2026-03-25",
+    "time": "14:00",
+    "status": "sent",
+    "scheduled_time": "07:30",
+    "message": "Bom dia, minha princess linda\nVocê é meu docinho favorito 💙",
+    "detail": "Message sent successfully"
+  }
+]
