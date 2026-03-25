@@ -7,8 +7,6 @@ __pycache__/
 
 # Virtual environments
 venv/
-.env
-.env.*
 
 # Build / Packaging
 build/
@@ -17,7 +15,7 @@ dist/
 .eggs/
 
 # Logs & Data
-data/*.json
+data/
 logs/
 *.log
   
@@ -39,4 +37,6 @@ Thumbs.db
 # Node
 node_modules/
 
-# Custom
+############################
+#          Custom          #
+############################
