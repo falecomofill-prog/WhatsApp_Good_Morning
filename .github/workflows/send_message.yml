@@ -25,6 +25,20 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+      - name: Debug environment variables presence
+        run: |
+          [ -n "${TWILIO_SID}" ] && echo "TWILIO_SID=OK" || echo "TWILIO_SID=MISSING"
+          [ -n "${TWILIO_TOKEN}" ] && echo "TWILIO_TOKEN=OK" || echo "TWILIO_TOKEN=MISSING"
+          [ -n "${TWILIO_WHATSAPP_NUMBER}" ] && echo "TWILIO_WHATSAPP_NUMBER=OK" || echo "TWILIO_WHATSAPP_NUMBER=MISSING"
+          [ -n "${MY_WHATSAPP_NUMBER}" ] && echo "MY_WHATSAPP_NUMBER=OK" || echo "MY_WHATSAPP_NUMBER=MISSING"
+          [ -n "${MODE}" ] && echo "MODE=OK" || echo "MODE=MISSING"
+        env:
+          TWILIO_SID: ${{ secrets.TWILIO_SID }}
+          TWILIO_TOKEN: ${{ secrets.TWILIO_TOKEN }}
+          TWILIO_WHATSAPP_NUMBER: ${{ secrets.TWILIO_WHATSAPP_NUMBER }}
+          MY_WHATSAPP_NUMBER: ${{ secrets.MY_WHATSAPP_NUMBER }}
+          MODE: ${{ secrets.MODE }}
+
       - name: Run script
         env:
           TWILIO_SID: ${{ secrets.TWILIO_SID }}
