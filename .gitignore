@@ -1,12 +1,14 @@
 # Python
 __pycache__/
 *.py[cod]
+*.pyc
 *.pyo
 *.pyd
 *$py.class
 
 # Virtual environments
 venv/
+.venv/
 
 # Build / Packaging
 build/
@@ -15,6 +17,7 @@ dist/
 .eggs/
 
 # Logs & Data
+data/
 logs/
 *.log
   
@@ -39,3 +42,12 @@ node_modules/
 ############################
 #          Custom          #
 ############################
+
+# Selenium session
+chrome_profile/
+
+# Private personal messages
+config/greetings_private.txt
+config/messages_private.txt
+data/last_sent.txt
+data/history.json

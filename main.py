@@ -1,116 +1,190 @@
-import sys
+from __future__ import annotations
 
-from config import MODE
-from logger import log_event
-from messaging import build_message, send_whatsapp_message
-from scheduler import (
-    get_current_time,
-    get_now,
-    get_or_create_daily_schedule,
-    get_today_date,
-    is_allowed_weekday,
-    is_within_execution_window,
-    is_within_tolerance,
-)
-from storage import read_last_sent_date, write_last_sent_date
+import os
+import random
+import time
+from datetime import datetime, timedelta
+
+from modules.config_loader import load_config
+from modules.logger import log_error, log_info, log_success, log_warning
+from modules.message_generator import generate_message
+from modules.sender_web import send_whatsapp_message
+
+
+LAST_SENT_FILE = "data/last_sent.txt"
+
+
+class SimpleLogger:
+    @staticmethod
+    def info(message: str) -> None:
+        log_info(message)
+
+    @staticmethod
+    def warning(message: str) -> None:
+        log_warning(message)
+
+    @staticmethod
+    def error(message: str) -> None:
+        log_error(message)
+
+    @staticmethod
+    def success(message: str) -> None:
+        log_success(message)
+
+
+def _parse_hhmm_to_datetime(time_str: str, base_date: datetime) -> datetime:
+    hour_str, minute_str = time_str.split(":")
+    return base_date.replace(
+        hour=int(hour_str),
+        minute=int(minute_str),
+        second=0,
+        microsecond=0,
+    )
+
+
+def _sleep_until_random_time_in_window(config, logger: SimpleLogger) -> None:
+    mode = getattr(config, "mode", "PROD").strip().upper()
+
+    if mode == "TEST":
+        logger.info("MODE=TEST detected. Send window will be ignored and execution will continue immediately.")
+        return
+
+    if not config.send_window_enabled:
+        logger.info("Send window disabled. Proceeding immediately.")
+        return
+
+    now = datetime.now()
+    window_start = _parse_hhmm_to_datetime(config.send_window_start, now)
+    window_end = _parse_hhmm_to_datetime(config.send_window_end, now)
+
+    if window_end <= window_start:
+        raise ValueError("SEND_WINDOW_END must be later than SEND_WINDOW_START on the same day.")
+
+    if now > window_end:
+        logger.warning(
+            f"Current time is already past the configured send window "
+            f"({config.send_window_start} - {config.send_window_end}). "
+            f"This execution will skip sending."
+        )
+        raise RuntimeError("Execution started after the send window ended.")
+
+    effective_start = max(now, window_start)
+    available_seconds = int((window_end - effective_start).total_seconds())
+
+    if available_seconds <= 0:
+        logger.warning("No time remaining in the configured send window. Skipping send.")
+        raise RuntimeError("No time remaining in the send window.")
+
+    random_delay_seconds = random.randint(0, available_seconds)
+    scheduled_time = effective_start + timedelta(seconds=random_delay_seconds)
+
+    logger.info(
+        f"MODE=PROD detected. Random send window enabled. "
+        f"Selected send time: {scheduled_time.strftime('%H:%M:%S')} "
+        f"(window: {config.send_window_start} - {config.send_window_end})"
+    )
+
+    logger.info(f"Waiting {random_delay_seconds} seconds before sending...")
+    time.sleep(random_delay_seconds)
+
+
+def _ensure_data_directory() -> None:
+    os.makedirs("data", exist_ok=True)
+
+
+def _today_str() -> str:
+    return datetime.now().strftime("%Y-%m-%d")
+
+
+def _already_sent_today(logger: SimpleLogger) -> bool:
+    if not os.path.exists(LAST_SENT_FILE):
+        logger.info("last_sent.txt not found. No send recorded for today yet.")
+        return False
+
+    try:
+        with open(LAST_SENT_FILE, "r", encoding="utf-8") as file:
+            last_sent_date = file.read().strip()
+
+        if last_sent_date == _today_str():
+            logger.warning(f"Message has already been sent today ({last_sent_date}). Skipping execution.")
+            return True
+
+        logger.info(f"Last recorded send date: {last_sent_date}. Sending is allowed today.")
+        return False
+
+    except Exception as exc:
+        logger.warning(f"Could not read {LAST_SENT_FILE}: {exc}. Continuing execution for safety.")
+        return False
+
+
+def _mark_sent_today(logger: SimpleLogger) -> None:
+    _ensure_data_directory()
+
+    with open(LAST_SENT_FILE, "w", encoding="utf-8") as file:
+        file.write(_today_str())
+
+    logger.info(f"Updated {LAST_SENT_FILE} with today's date.")
 
 
 def main() -> None:
-    print(f"[INFO] Running in {MODE} mode")
-
-    today_date = get_today_date()
-    current_time = get_current_time()
-    now = get_now()
-
-    if MODE == "PROD" and not is_allowed_weekday(now):
-        print("[INFO] Today is not an allowed weekday.")
-        log_event(
-            date=today_date,
-            time=current_time,
-            status="skipped_day",
-            detail="Today is not an allowed weekday",
-        )
-        sys.exit()
-
-    scheduled_time, created_new_schedule = get_or_create_daily_schedule()
-
-    if created_new_schedule:
-        print(f"[INFO] New scheduled time for today: {scheduled_time}")
-        log_event(
-            date=today_date,
-            time=current_time,
-            status="schedule_created",
-            scheduled_time=scheduled_time,
-            detail="New daily schedule created",
-        )
-
-    if MODE == "PROD":
-        if not is_within_execution_window(now):
-            print(f"[INFO] Outside execution window. Now: {current_time}")
-            log_event(
-                date=today_date,
-                time=current_time,
-                status="skipped_window",
-                scheduled_time=scheduled_time,
-                detail="Outside execution window",
-            )
-            sys.exit()
-
-        if not is_within_tolerance(scheduled_time, now):
-            print(f"[INFO] Outside allowed tolerance. Scheduled: {scheduled_time} | Now: {current_time}")
-            log_event(
-                date=today_date,
-                time=current_time,
-                status="skipped_window",
-                scheduled_time=scheduled_time,
-                detail="Outside tolerance window",
-            )
-            sys.exit()
-
-    last_sent_date = read_last_sent_date()
-
-    if last_sent_date == today_date and MODE == "PROD":
-        print("[INFO] Message already sent today. Skipping execution.")
-        log_event(
-            date=today_date,
-            time=current_time,
-            status="skipped_duplicate",
-            scheduled_time=scheduled_time,
-            detail="Message already sent today",
-        )
-        sys.exit()
-
-    if last_sent_date == today_date and MODE == "TEST":
-        print("[INFO] TEST mode: ignoring duplicate check")
+    start_time = time.time()
+    logger = SimpleLogger()
 
     try:
-        final_message = build_message()
-        send_whatsapp_message(final_message)
-        write_last_sent_date(today_date)
+        config = load_config()
+        logger.success("Configuration loaded and validated.")
 
-        print("[INFO] Message sent successfully!")
+        if _already_sent_today(logger):
+            return
 
-        log_event(
-            date=today_date,
-            time=current_time,
-            status="sent",
-            scheduled_time=scheduled_time,
-            message=final_message,
-            detail="Message sent successfully",
+        _sleep_until_random_time_in_window(config, logger)
+
+        message = generate_message(
+            greetings_file=config.greetings_file,
+            messages_file=config.messages_file,
         )
+        logger.success("Message generated successfully.")
 
-    except Exception as e:
-        print(f"[ERROR] Failed to send message: {e}")
+        total_attempts = config.max_retries + 1
 
-        log_event(
-            date=today_date,
-            time=current_time,
-            status="error",
-            scheduled_time=scheduled_time,
-            detail=str(e),
-        )
+        for attempt in range(1, total_attempts + 1):
+            try:
+                logger.info(f"Starting send attempt {attempt}/{total_attempts}...")
 
+                send_whatsapp_message(
+                    config=config,
+                    message=message,
+                    logger=logger,
+                )
+
+                _mark_sent_today(logger)
+                logger.success("Flow completed successfully.")
+                return
+
+            except Exception as exc:
+                logger.error(f"Attempt {attempt}/{total_attempts} failed: {exc}")
+
+                non_retryable_errors = (NameError, SyntaxError, TypeError, ValueError)
+
+                if isinstance(exc, non_retryable_errors):
+                    logger.error("Non-retryable error detected. Aborting without new attempts.")
+                    raise
+
+                if attempt < total_attempts:
+                    logger.info(f"Retrying in {config.retry_delay_seconds} seconds...")
+                    time.sleep(config.retry_delay_seconds)
+                else:
+                    raise
+
+    except Exception as exc:
+        logger.error(f"Fatal error: {exc}")
         raise
+
+    finally:
+        total_time = time.time() - start_time
+        minutes = int(total_time // 60)
+        seconds = int(total_time % 60)
+        logger.info(f"============ Total execution time: {minutes}m{seconds:02d}s ===============")
 
 
 if __name__ == "__main__":
