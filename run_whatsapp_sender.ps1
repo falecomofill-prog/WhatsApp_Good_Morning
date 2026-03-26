@@ -22,7 +22,7 @@ public class Win32 {
 
 $x = $secondary.Bounds.X
 $y = $secondary.Bounds.Y
-$w = [Math]::Min(1080, $secondary.Bounds.Width)
-$h = [Math]::Min(820, $secondary.Bounds.Height)
+$w = [Math]::Min(2400, $secondary.Bounds.Width)
+$h = [Math]::Min(840, $secondary.Bounds.Height)
 
 [Win32]::MoveWindow($p.MainWindowHandle, $x, $y, $w, $h, $true)

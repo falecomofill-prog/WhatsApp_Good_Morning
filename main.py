@@ -1,80 +1,191 @@
 from __future__ import annotations
 
+import os
+import random
 import time
+from datetime import datetime, timedelta
 
 from modules.config_loader import load_config
-from modules.logger import log_error, log_info, log_success
+from modules.logger import log_error, log_info, log_success, log_warning
 from modules.message_generator import generate_message
-from modules.sender_twilio import send_whatsapp_twilio_message
-from modules.sender_web import send_whatsapp_web_message
+from modules.sender_web import send_whatsapp_message
+
+
+LAST_SENT_FILE = "data/last_sent.txt"
+
+
+class SimpleLogger:
+    @staticmethod
+    def info(message: str) -> None:
+        log_info(message)
+
+    @staticmethod
+    def warning(message: str) -> None:
+        log_warning(message)
+
+    @staticmethod
+    def error(message: str) -> None:
+        log_error(message)
+
+    @staticmethod
+    def success(message: str) -> None:
+        log_success(message)
+
+
+def _parse_hhmm_to_datetime(time_str: str, base_date: datetime) -> datetime:
+    hour_str, minute_str = time_str.split(":")
+    return base_date.replace(
+        hour=int(hour_str),
+        minute=int(minute_str),
+        second=0,
+        microsecond=0,
+    )
+
+
+def _sleep_until_random_time_in_window(config, logger: SimpleLogger) -> None:
+    mode = getattr(config, "mode", "PROD").strip().upper()
+
+    if mode == "TEST":
+        logger.info("MODE=TEST detected. Send window will be ignored and execution will continue immediately.")
+        return
+
+    if not config.send_window_enabled:
+        logger.info("Send window disabled. Proceeding immediately.")
+        return
+
+    now = datetime.now()
+    window_start = _parse_hhmm_to_datetime(config.send_window_start, now)
+    window_end = _parse_hhmm_to_datetime(config.send_window_end, now)
+
+    if window_end <= window_start:
+        raise ValueError("SEND_WINDOW_END must be later than SEND_WINDOW_START on the same day.")
+
+    if now > window_end:
+        logger.warning(
+            f"Current time is already past the configured send window "
+            f"({config.send_window_start} - {config.send_window_end}). "
+            f"This execution will skip sending."
+        )
+        raise RuntimeError("Execution started after the send window ended.")
+
+    effective_start = max(now, window_start)
+    available_seconds = int((window_end - effective_start).total_seconds())
+
+    if available_seconds <= 0:
+        logger.warning("No time remaining in the configured send window. Skipping send.")
+        raise RuntimeError("No time remaining in the send window.")
+
+    random_delay_seconds = random.randint(0, available_seconds)
+    scheduled_time = effective_start + timedelta(seconds=random_delay_seconds)
+
+    logger.info(
+        f"MODE=PROD detected. Random send window enabled. "
+        f"Selected send time: {scheduled_time.strftime('%H:%M:%S')} "
+        f"(window: {config.send_window_start} - {config.send_window_end})"
+    )
+
+    logger.info(f"Waiting {random_delay_seconds} seconds before sending...")
+    time.sleep(random_delay_seconds)
+
+
+def _ensure_data_directory() -> None:
+    os.makedirs("data", exist_ok=True)
+
+
+def _today_str() -> str:
+    return datetime.now().strftime("%Y-%m-%d")
+
+
+def _already_sent_today(logger: SimpleLogger) -> bool:
+    if not os.path.exists(LAST_SENT_FILE):
+        logger.info("last_sent.txt not found. No send recorded for today yet.")
+        return False
+
+    try:
+        with open(LAST_SENT_FILE, "r", encoding="utf-8") as file:
+            last_sent_date = file.read().strip()
+
+        if last_sent_date == _today_str():
+            logger.warning(f"Message has already been sent today ({last_sent_date}). Skipping execution.")
+            return True
+
+        logger.info(f"Last recorded send date: {last_sent_date}. Sending is allowed today.")
+        return False
+
+    except Exception as exc:
+        logger.warning(f"Could not read {LAST_SENT_FILE}: {exc}. Continuing execution for safety.")
+        return False
+
+
+def _mark_sent_today(logger: SimpleLogger) -> None:
+    _ensure_data_directory()
+
+    with open(LAST_SENT_FILE, "w", encoding="utf-8") as file:
+        file.write(_today_str())
+
+    logger.info(f"Updated {LAST_SENT_FILE} with today's date.")
 
 
 def main() -> None:
     start_time = time.time()
+    logger = SimpleLogger()
 
     try:
         config = load_config()
-        log_success("Configuration loaded and validated.")
+        logger.success("Configuration loaded and validated.")
+
+        if _already_sent_today(logger):
+            return
+
+        _sleep_until_random_time_in_window(config, logger)
 
         message = generate_message(
             greetings_file=config.greetings_file,
             messages_file=config.messages_file,
         )
-        log_success("Message generated successfully.")
+        logger.success("Message generated successfully.")
 
-        for attempt in range(1, config.max_retries + 2):
+        total_attempts = config.max_retries + 1
+
+        for attempt in range(1, total_attempts + 1):
             try:
-                log_info(f"Starting send attempt {attempt}.")
+                logger.info(f"Starting send attempt {attempt}/{total_attempts}...")
 
-                if config.sender_mode == "selenium":
-                    send_whatsapp_web_message(
-                        phone=config.destination_phone,
-                        message=message,
-                        profile_path=config.chrome_profile_path,
-                        base_url=config.whatsapp_web_url,
-                        headless=config.headless,
-                        login_timeout_seconds=config.login_timeout_seconds,
-                        element_timeout_seconds=config.element_timeout_seconds,
-                        min_open_delay_seconds=config.min_open_delay_seconds,
-                        max_open_delay_seconds=config.max_open_delay_seconds,
-                        min_pre_send_delay_seconds=config.min_pre_send_delay_seconds,
-                        max_pre_send_delay_seconds=config.max_pre_send_delay_seconds,
-                        min_post_send_delay_seconds=config.min_post_send_delay_seconds,
-                        max_post_send_delay_seconds=config.max_post_send_delay_seconds,
-                    )
+                send_whatsapp_message(
+                    config=config,
+                    message=message,
+                    logger=logger,
+                )
 
-                elif config.sender_mode == "twilio":
-                    send_whatsapp_twilio_message(
-                        sid=config.twilio_sid,
-                        token=config.twilio_token,
-                        from_number=config.twilio_whatsapp_number,
-                        to_number=config.destination_phone,
-                        body=message,
-                    )
-
-                log_success("Flow completed successfully.")
+                _mark_sent_today(logger)
+                logger.success("Flow completed successfully.")
                 return
 
             except Exception as exc:
-                log_error(f"Attempt {attempt} failed: {exc}")
+                logger.error(f"Attempt {attempt}/{total_attempts} failed: {exc}")
 
-                if attempt <= config.max_retries:
-                    log_info(f"Retrying in {config.retry_delay_seconds} seconds...")
+                non_retryable_errors = (NameError, SyntaxError, TypeError, ValueError)
+
+                if isinstance(exc, non_retryable_errors):
+                    logger.error("Non-retryable error detected. Aborting without new attempts.")
+                    raise
+
+                if attempt < total_attempts:
+                    logger.info(f"Retrying in {config.retry_delay_seconds} seconds...")
                     time.sleep(config.retry_delay_seconds)
                 else:
                     raise
 
     except Exception as exc:
-        log_error(f"Fatal error: {exc}")
+        logger.error(f"Fatal error: {exc}")
         raise
 
     finally:
-        end_time = time.time()
-        total_time = end_time - start_time
+        total_time = time.time() - start_time
         minutes = int(total_time // 60)
         seconds = int(total_time % 60)
-        log_info(f"============ Total execution time: {minutes}m{seconds:02d}s ===============")
+        logger.info(f"============ Total execution time: {minutes}m{seconds:02d}s ===============")
 
-        
+
 if __name__ == "__main__":
     main()
