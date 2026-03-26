@@ -1,117 +1,80 @@
-import sys
+from __future__ import annotations
 
-from config import MODE
-from logger import log_event
-from messaging import build_message, send_whatsapp_message
-from scheduler import (
-    get_current_time,
-    get_now,
-    get_or_create_daily_schedule,
-    get_today_date,
-    is_allowed_weekday,
-    is_within_execution_window,
-    is_within_tolerance,
-)
-from storage import read_last_sent_date, write_last_sent_date
+import time
+
+from modules.config_loader import load_config
+from modules.logger import log_error, log_info, log_success
+from modules.message_generator import generate_message
+from modules.sender_twilio import send_whatsapp_twilio_message
+from modules.sender_web import send_whatsapp_web_message
 
 
 def main() -> None:
-    print(f"[INFO] Running in {MODE} mode")
-
-    today_date = get_today_date()
-    current_time = get_current_time()
-    now = get_now()
-
-    if MODE == "PROD" and not is_allowed_weekday(now):
-        print("[INFO] Today is not an allowed weekday.")
-        log_event(
-            date=today_date,
-            time=current_time,
-            status="skipped_day",
-            detail="Today is not an allowed weekday",
-        )
-        sys.exit()
-
-    scheduled_time, created_new_schedule = get_or_create_daily_schedule()
-
-    if created_new_schedule:
-        print(f"[INFO] New scheduled time for today: {scheduled_time}")
-        log_event(
-            date=today_date,
-            time=current_time,
-            status="schedule_created",
-            scheduled_time=scheduled_time,
-            detail="New daily schedule created",
-        )
-
-    if MODE == "PROD":
-        if not is_within_execution_window(now):
-            print(f"[INFO] Outside execution window. Now: {current_time}")
-            log_event(
-                date=today_date,
-                time=current_time,
-                status="skipped_window",
-                scheduled_time=scheduled_time,
-                detail="Outside execution window",
-            )
-            sys.exit()
-
-        if not is_within_tolerance(scheduled_time, now):
-            print(f"[INFO] Outside allowed tolerance. Scheduled: {scheduled_time} | Now: {current_time}")
-            log_event(
-                date=today_date,
-                time=current_time,
-                status="skipped_window",
-                scheduled_time=scheduled_time,
-                detail="Outside tolerance window",
-            )
-            sys.exit()
-
-    last_sent_date = read_last_sent_date()
-
-    if last_sent_date == today_date and MODE == "PROD":
-        print("[INFO] Message already sent today. Skipping execution.")
-        log_event(
-            date=today_date,
-            time=current_time,
-            status="skipped_duplicate",
-            scheduled_time=scheduled_time,
-            detail="Message already sent today",
-        )
-        sys.exit()
-
-    if last_sent_date == today_date and MODE == "TEST":
-        print("[INFO] TEST mode: ignoring duplicate check")
+    start_time = time.time()
 
     try:
-        final_message = build_message()
-        send_whatsapp_message(final_message)
-        write_last_sent_date(today_date)
+        config = load_config()
+        log_success("Configuration loaded and validated.")
 
-        print("[INFO] Message sent successfully!")
-
-        log_event(
-            date=today_date,
-            time=current_time,
-            status="sent",
-            scheduled_time=scheduled_time,
-            message=final_message,
-            detail="Message sent successfully",
+        message = generate_message(
+            greetings_file=config.greetings_file,
+            messages_file=config.messages_file,
         )
+        log_success("Message generated successfully.")
 
-    except Exception as e:
-        print(f"[ERROR] Failed to send message: {e}")
+        for attempt in range(1, config.max_retries + 2):
+            try:
+                log_info(f"Starting send attempt {attempt}.")
 
-        log_event(
-            date=today_date,
-            time=current_time,
-            status="error",
-            scheduled_time=scheduled_time,
-            detail=str(e),
-        )
+                if config.sender_mode == "selenium":
+                    send_whatsapp_web_message(
+                        phone=config.destination_phone,
+                        message=message,
+                        profile_path=config.chrome_profile_path,
+                        base_url=config.whatsapp_web_url,
+                        headless=config.headless,
+                        login_timeout_seconds=config.login_timeout_seconds,
+                        element_timeout_seconds=config.element_timeout_seconds,
+                        min_open_delay_seconds=config.min_open_delay_seconds,
+                        max_open_delay_seconds=config.max_open_delay_seconds,
+                        min_pre_send_delay_seconds=config.min_pre_send_delay_seconds,
+                        max_pre_send_delay_seconds=config.max_pre_send_delay_seconds,
+                        min_post_send_delay_seconds=config.min_post_send_delay_seconds,
+                        max_post_send_delay_seconds=config.max_post_send_delay_seconds,
+                    )
 
+                elif config.sender_mode == "twilio":
+                    send_whatsapp_twilio_message(
+                        sid=config.twilio_sid,
+                        token=config.twilio_token,
+                        from_number=config.twilio_whatsapp_number,
+                        to_number=config.destination_phone,
+                        body=message,
+                    )
+
+                log_success("Flow completed successfully.")
+                return
+
+            except Exception as exc:
+                log_error(f"Attempt {attempt} failed: {exc}")
+
+                if attempt <= config.max_retries:
+                    log_info(f"Retrying in {config.retry_delay_seconds} seconds...")
+                    time.sleep(config.retry_delay_seconds)
+                else:
+                    raise
+
+    except Exception as exc:
+        log_error(f"Fatal error: {exc}")
         raise
 
+    finally:
+        end_time = time.time()
+        total_time = end_time - start_time
+        minutes = int(total_time // 60)
+        seconds = int(total_time % 60)
+        log_info(f"============ Total execution time: {minutes}m{seconds:02d}s ===============")
 
+        
 if __name__ == "__main__":
     main()
