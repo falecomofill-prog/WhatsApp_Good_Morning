@@ -9,11 +9,9 @@ A local automation system that sends **one personalized WhatsApp message per day
 
 Designed for **reliability**, **simplicity**, and **human-like behavior**. Runs locally via **Windows Task Scheduler**.
 
-
-
 ---  
-  
-# Demo (What Happens in Practice)  
+
+# Demo (what happens in practice)  
 
 ![Execution Demo](docs/demo1.gif)
 
@@ -24,7 +22,6 @@ Designed for **reliability**, **simplicity**, and **human-like behavior**. Runs 
 5. Opens WhatsApp Web  
 6. Sends message  
 7. Closes browser
-
 
 ---  
 
@@ -44,7 +41,6 @@ Designed for **reliability**, **simplicity**, and **human-like behavior**. Runs 
 - Duplicate prevention (`last_sent.txt`)  
 - Failure artifacts (screenshot + HTML)  
 
-
 ---  
   
 # 📁 Project Structure  
@@ -59,7 +55,9 @@ WhatsApp_Good_Morning/
 │ └── messages.example.txt  
 ├── data/  
 │ └── last_sent.txt  
+├── docs/  
 ├── logs/  
+│ ├── error.log  
 │ └── execution.log  
 ├── modules/  
 │ ├── config_loader.py  
@@ -76,6 +74,12 @@ WhatsApp_Good_Morning/
 └── task_scheduler_configuration.md
 ```
 
+### Dependencies
+
+```
+selenium  
+python-dotenv
+```
 
 ---  
   
@@ -89,9 +93,8 @@ WhatsApp_Good_Morning/
 | `message_generator.py` | Random message generation              |
 | `logger.py`            | Structured logging                     |
 
-
 ---  
-  
+
 # How It Works  
   
 1. Script starts (via Task Scheduler or manual execution)  
@@ -107,9 +110,8 @@ WhatsApp_Good_Morning/
 9. Stores today's date in `last_sent.txt`  
 10. Closes browser  
 
-
 ---  
-  
+
 # Execution Modes  
   
 | Mode    | Behavior                                   |
@@ -117,25 +119,21 @@ WhatsApp_Good_Morning/
 | 🟡 TEST | Ignores send window, runs immediately      |
 | 🟢 PROD | Enforces time window and random scheduling |
 
+![Mode](docs/mode-prod.jpg)
 
 ---  
-  
+
 # Smart Scheduling  
   
 Configured via `.env`:  
 
-```
-SEND_WINDOW_ENABLED=true  
-SEND_WINDOW_START=08:30  
-SEND_WINDOW_END=09:30
-```
+![Smart Scheduling](docs/smart_scheduling.jpg)
 
 ### Behavior
 
 - Script starts at beginning of window
 - Random send time is selected
 - Message is sent once within the window
-
 
 ---
 
@@ -149,9 +147,7 @@ Uses:
 - Prevents multiple sends in the same day
 - Ensures idempotent execution
 
-Example:
 ![Duplicate Protection](docs/duplicate_protection1.jpg)
-
 
 ---
 
@@ -165,77 +161,54 @@ Delays are randomized:
 
 Configured via `.env`:
 
-```
-MIN_PRE_SEND_DELAY_SECONDS=3  
-MAX_PRE_SEND_DELAY_SECONDS=7
-```
-
+![Delays](docs/delays.jpg)
 
 ---
 
-# 🔐 Configuration (.env)
+# Output Example
 
-Example:
+Example of a real message sent via WhatsApp:
 
-```
-MODE=TEST
+![Delays](docs/output_example.jpg)
 
-SEND_WINDOW_ENABLED=true  
-SEND_WINDOW_START=08:30  
-SEND_WINDOW_END=09:30
+- **Line 1** → Random greeting  
+- **Line 2** → Random message
 
-DESTINATION_PHONE=551199887766 
-  
-CHROME_PROFILE_PATH=chrome_profile  
-CHROME_PROFILE_DIRECTORY=  
-  
-WHATSAPP_WEB_URL=https://web.whatsapp.com  
-  
-GREETINGS_FILE=config/greetings_private.txt  
-MESSAGES_FILE=config/messages_private.txt  
-  
-HEADLESS=false  
-ENABLE_HEADLESS_FALLBACK=true  
-  
-USE_RANDOM_DELAY=true  
-  
-ELEMENT_TIMEOUT_SECONDS=60  
-PAGE_LOAD_TIMEOUT_SECONDS=60  
-SCRIPT_TIMEOUT_SECONDS=60  
-  
-MIN_OPEN_DELAY_SECONDS=2  
-MAX_OPEN_DELAY_SECONDS=5  
-  
-MIN_PRE_SEND_DELAY_SECONDS=3  
-MAX_PRE_SEND_DELAY_SECONDS=7  
-  
-MIN_POST_SEND_DELAY_SECONDS=2  
-MAX_POST_SEND_DELAY_SECONDS=4  
-  
-MAX_RETRIES=2  
-RETRY_DELAY_SECONDS=5  
-```
-
-
----
+Both lines are **randomly selected at runtime**, creating a natural and non-repetitive message.
 
 # Message Customization
 
-Edit:
+Messages are fully customizable via simple `.txt` files:  
+  
+| File | Purpose |  
+|------|--------|  
+| `config/greetings_private.txt` | First line (greeting) |  
+| `config/messages_private.txt` | Second line (main message) |  
+### How it works  
+  
+- Each line in the file = one possible message  
+- The system randomly selects **one line from each file**  
+- The final message is composed dynamically
 
-**config/greetings_private.txt**  
-**config/messages_private.txt**
+### Example: Greetings  
+  
+`config/greetings_private.txt`  
 
-Each line = one possible message.
-
-Example:
-
-```
 Good morning!  
-Have a great day!
-(...)
-```
+Hello!  
+Hey there!  
+Wishing you a great day!  
+Rise and shine!
 
+### Example: Messages  
+  
+`config/messages_private.txt`  
+
+Hope your day is full of positive energy!  
+Stay focused and make today count.  
+Keep pushing forward — you're doing great!  
+Wishing you a productive and successful day!  
+Take a moment to enjoy the little things today.
 
 ---
 
@@ -249,12 +222,12 @@ python -m venv venv
 
 ### 2️⃣ Activate
 
-```powershell
+```windows
 .\venv\Scripts\Activate.ps1
 ```
-
-```bash
-source venv\scripts\activate
+or
+```linux/mac
+source venv/scripts/activate
 ```
 
 ### 3️⃣ Install dependencies
@@ -263,25 +236,23 @@ source venv\scripts\activate
 pip install -r requirements.txt
 ```
 
-
----
-
-# Run Locally
+### 4️⃣ Run Locally
 
 ```
 python main.py
 ```
 
-
 ---
 
 # Automation (Windows Task Scheduler)
 
-Recommended setup:
+### Recommended setup
 
 - Trigger: daily
 - Time: start of send window (e.g., 08:30)
 - Action: run `run_whatsapp_sender.ps1`
+
+![General Tab](docs/task_scheduler.jpg)
 
 The script handles:
 
@@ -289,8 +260,7 @@ The script handles:
 - execution control
 - duplicate prevention
 
-
-## Step-by-Step: Task Scheduler Configuration  
+## Step-by-Step Configuration  
 
 ### 1. Create Task
 
@@ -327,7 +297,7 @@ Add arguments:
 -ExecutionPolicy Bypass -File "C:\Users\YOUR_USER\Path\To\Project\run_whatsapp_sender.ps1"
 ```
 
-**Important**: Replace with your actual path.  
+**Important**: Replace with your actual path inside commas.
 
 ![Actions Tab](docs/task_manager_2.jpg)
 
@@ -361,9 +331,8 @@ Expected behavior:
 - Message is sent  
 - Logs are displayed in real time  
 
-
 ---  
-  
+
 # ⚠️ Important Notes  
   
 - The PC must be **powered on**  
@@ -371,7 +340,6 @@ Expected behavior:
 - The task **will NOT run properly in background mode**  
 - Selenium requires an active desktop session  
 - First execution may require scanning the WhatsApp QR code  
-
 
 ---  
 
@@ -381,7 +349,6 @@ Expected behavior:
 - Keep logs open during initial tests  
 - Avoid running manually + scheduler at the same time  
 - Ensure Chrome is fully closed before execution (to avoid profile conflicts
-
 
 ---
 
@@ -398,7 +365,6 @@ Includes:
 - errors
 - timing
 
-
 ---
 
 # Failure Handling
@@ -407,17 +373,6 @@ Includes:
 - Automatic headless fallback
 - Screenshot + HTML capture on failure
 - Graceful exit on non-retryable errors
-
-
----
-
-# Dependencies
-
-```
-selenium  
-python-dotenv
-```
-
 
 ---
 
@@ -429,7 +384,6 @@ python-dotenv
 - Config-driven system
 - Fail-safe execution
 - Clean modular architecture
-
 
 ---
 
@@ -444,14 +398,12 @@ It demonstrates **real engineering thinking**:
 - user-behavior simulation  
 - safe automation design
 
-
 ---
 
 # 📌 Status
 
 ✅ Stable (v1.1)  
 🚀 Production-ready for personal automation
-
 
 ---
 

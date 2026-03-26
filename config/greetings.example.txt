@@ -1,3 +1,4 @@
-Bom dia, meu amor! ☀️
-Oi, amor!
-Bom dia! ❤️
+greeting_01
+greeting_02
+greeting_03
+(...)

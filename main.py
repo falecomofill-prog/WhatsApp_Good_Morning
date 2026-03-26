@@ -32,6 +32,12 @@ class SimpleLogger:
         log_success(message)
 
 
+def format_seconds_to_mmss(seconds: int) -> str:
+    minutes = seconds // 60
+    remaining_seconds = seconds % 60
+    return f"{minutes}m{remaining_seconds:02d}s"
+
+
 def _parse_hhmm_to_datetime(time_str: str, base_date: datetime) -> datetime:
     hour_str, minute_str = time_str.split(":")
     return base_date.replace(
@@ -84,7 +90,8 @@ def _sleep_until_random_time_in_window(config, logger: SimpleLogger) -> None:
         f"(window: {config.send_window_start} - {config.send_window_end})"
     )
 
-    logger.info(f"Waiting {random_delay_seconds} seconds before sending...")
+    formatted_time = format_seconds_to_mmss(random_delay_seconds)
+    logger.info(f"Waiting {formatted_time} before sending...")
     time.sleep(random_delay_seconds)
 
 
@@ -184,7 +191,7 @@ def main() -> None:
         total_time = time.time() - start_time
         minutes = int(total_time // 60)
         seconds = int(total_time % 60)
-        logger.info(f"============ Total execution time: {minutes}m{seconds:02d}s ===============")
+        logger.info(f"================= Total execution time: {minutes}m{seconds:02d}s ====================")
 
 
 if __name__ == "__main__":
