@@ -1,17 +1,20 @@
 # WhatsApp_Good_Morning
 
-![Python](https://img.shields.io/badge/Python-3.11-blue)  ![Selenium](https://img.shields.io/badge/Selenium-Automation-green)  ![Status](https://img.shields.io/badge/Status-Stable-success)  ![Platform](https://img.shields.io/badge/Platform-Windows-lightgrey)
-
 > WhatsApp Automated Messaging System
-> (Selenium + WhatsApp Web)
-  
+> Built with Selenium + WhatsApp Web
+
+![Python](https://img.shields.io/badge/Python-3.11-blue)
+![Selenium](https://img.shields.io/badge/Selenium-Automation-green)
+![Status](https://img.shields.io/badge/Status-Stable-success)
+![Platform](https://img.shields.io/badge/Platform-Windows-lightgrey)
+
 A local automation system that sends **one personalized WhatsApp message per day** using **WhatsApp Web + Selenium**.
 
 Designed for **reliability**, **simplicity**, and **human-like behavior**. Runs locally via **Windows Task Scheduler**.
 
 ---  
 
-# Demo (what happens in practice)  
+# 🎬 Demo (what happens in practice)  
 
 ![Execution Demo](docs/demo1.gif)
 
@@ -23,7 +26,20 @@ Designed for **reliability**, **simplicity**, and **human-like behavior**. Runs 
 6. Sends message  
 7. Closes browser
 
----  
+---
+
+# 🧠 Why This Project Matters  
+
+This is not just a script. This project showcases practical automation with a focus on reliability, realism, and safe execution.
+  
+It demonstrates **real engineering thinking**:  
+  
+- deterministic execution  
+- system reliability  
+- user-behavior simulation  
+- safe automation design
+
+---
 
 # ✨ Features  
   
@@ -83,7 +99,7 @@ python-dotenv
 
 ---  
   
-# Architecture  
+# 🏗️ Architecture  
   
 | Module                 | Responsibility                         |
 | ---------------------- | -------------------------------------- |
@@ -95,7 +111,7 @@ python-dotenv
 
 ---  
 
-# How It Works  
+# ⚙️ How It Works  
   
 1. Script starts (via Task Scheduler or manual execution)  
 2. Loads configuration from `.env`  
@@ -112,7 +128,7 @@ python-dotenv
 
 ---  
 
-# Execution Modes  
+# 🎛️ Execution Modes  
   
 | Mode    | Behavior                                   |
 | ------- | ------------------------------------------ |
@@ -123,7 +139,7 @@ python-dotenv
 
 ---  
 
-# Smart Scheduling  
+# ⏱️ Smart Scheduling  
   
 Configured via `.env`:  
 
@@ -137,7 +153,7 @@ Configured via `.env`:
 
 ---
 
-# Duplicate Protection
+# 🛡️ Duplicate Protection
 
 Uses:
 
@@ -151,7 +167,7 @@ Uses:
 
 ---
 
-# Human-like Behavior
+# 🤖 Human-like Behavior
 
 Delays are randomized:
 
@@ -165,7 +181,7 @@ Configured via `.env`:
 
 ---
 
-# Output Example
+# 💬 Output Example
 
 Example of a real message sent via WhatsApp:
 
@@ -174,9 +190,10 @@ Example of a real message sent via WhatsApp:
 - **Line 1** → Random greeting  
 - **Line 2** → Random message
 
-Both lines are **randomly selected at runtime**, creating a natural and non-repetitive message.
+Both lines are **randomly selected at runtime**, simulating natural human behavior and avoiding repetitive patterns.
 
-# Message Customization
+---
+# ✏️ Message Customization
 
 Messages are fully customizable via simple `.txt` files:  
   
@@ -222,11 +239,12 @@ python -m venv venv
 
 ### 2️⃣ Activate
 
-```windows
+Windows:
+```
 .\venv\Scripts\Activate.ps1
 ```
-or
-```linux/mac
+or Linux / Mac:
+```
 source venv/scripts/activate
 ```
 
@@ -244,7 +262,7 @@ python main.py
 
 ---
 
-# Automation (Windows Task Scheduler)
+# 🗓️ Automation (Windows Task Scheduler)
 
 ### Recommended setup
 
@@ -343,16 +361,16 @@ Expected behavior:
 
 ---  
 
-# Pro Tips  
+# 💡 Pro Tips  
   
 - Use `MODE=TEST` to validate setup quickly  
 - Keep logs open during initial tests  
 - Avoid running manually + scheduler at the same time  
-- Ensure Chrome is fully closed before execution (to avoid profile conflicts
+- Ensure Chrome is fully closed before execution (to avoid profile conflicts)
 
 ---
 
-# Logging
+# 📜 Logging
 
 Logs stored in:
 
@@ -367,7 +385,7 @@ Includes:
 
 ---
 
-# Failure Handling
+# 🚨 Failure Handling
 
 - Retry system for transient errors
 - Automatic headless fallback
@@ -376,7 +394,7 @@ Includes:
 
 ---
 
-# Design Principles
+# 🧩 Design Principles
 
 - Minimal dependencies
 - Local-first execution
@@ -387,28 +405,15 @@ Includes:
 
 ---
 
-# 🧠 Why This Project Matters  
-  
-This is not just a script.  
-  
-It demonstrates **real engineering thinking**:  
-  
-- deterministic execution  
-- system reliability  
-- user-behavior simulation  
-- safe automation design
-
----
-
 # 📌 Status
 
-✅ Stable (v1.1)  
+✅ Stable v1.1.0  
 🚀 Production-ready for personal automation
 
 ---
 
 # 👨‍💻 Author
 
-Developed by Fill (Filipe Maschio)
+Developed by Fill "Filipe Maschio"
 
 If this project helped you, consider giving it a star ⭐
