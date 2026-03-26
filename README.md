@@ -1,4 +1,4 @@
-# WhatsApp_God_Morning
+# WhatsApp_Good_Morning
 
 ![Python](https://img.shields.io/badge/Python-3.11-blue)  ![Selenium](https://img.shields.io/badge/Selenium-Automation-green)  ![Status](https://img.shields.io/badge/Status-Stable-success)  ![Platform](https://img.shields.io/badge/Platform-Windows-lightgrey)
 
@@ -10,11 +10,12 @@ A local automation system that sends **one personalized WhatsApp message per day
 Designed for **reliability**, **simplicity**, and **human-like behavior**. Runs locally via **Windows Task Scheduler**.
 
 
+
 ---  
   
 # Demo (What Happens in Practice)  
 
-![Execution Demo](C:\Users\Falec\OneDrive\Documentos\Python\WhatsApp_Good_Morning\docs\demo.gif.gif)
+![Execution Demo](docs/demo1.gif)
 
 1. Task Scheduler triggers execution  
 2. Script starts in PowerShell  
@@ -23,6 +24,7 @@ Designed for **reliability**, **simplicity**, and **human-like behavior**. Runs 
 5. Opens WhatsApp Web  
 6. Sends message  
 7. Closes browser
+
 
 ---  
 
@@ -41,7 +43,8 @@ Designed for **reliability**, **simplicity**, and **human-like behavior**. Runs 
 - Headless mode with automatic fallback  
 - Duplicate prevention (`last_sent.txt`)  
 - Failure artifacts (screenshot + HTML)  
-  
+
+
 ---  
   
 # 📁 Project Structure  
@@ -72,19 +75,21 @@ WhatsApp_Good_Morning/
 ├── run_whatsapp_sender.ps1  
 └── task_scheduler_configuration.md
 ```
-  
+
+
 ---  
   
 # Architecture  
   
-| Module                 | Responsibility                         |     |
-| ---------------------- | -------------------------------------- | --- |
-| `main.py`              | Orchestration, scheduling, retry logic |     |
-| `config_loader.py`     | Environment loading and validation     |     |
-| `sender_web.py`        | Selenium automation (WhatsApp Web)     |     |
-| `message_generator.py` | Random message generation              |     |
-| `logger.py`            | Structured logging                     |     |
-  
+| Module                 | Responsibility                         |
+| ---------------------- | -------------------------------------- |
+| `main.py`              | Orchestration, scheduling, retry logic |
+| `config_loader.py`     | Environment loading and validation     |
+| `sender_web.py`        | Selenium automation (WhatsApp Web)     |
+| `message_generator.py` | Random message generation              |
+| `logger.py`            | Structured logging                     |
+
+
 ---  
   
 # How It Works  
@@ -101,16 +106,18 @@ WhatsApp_Good_Morning/
 8. Validates send (lightweight)  
 9. Stores today's date in `last_sent.txt`  
 10. Closes browser  
-  
+
+
 ---  
   
 # Execution Modes  
   
-| Mode    | Behavior                                   |     |
-| ------- | ------------------------------------------ | --- |
-| 🟡 TEST | Ignores send window, runs immediately      |     |
-| 🟢 PROD | Enforces time window and random scheduling |     |
-  
+| Mode    | Behavior                                   |
+| ------- | ------------------------------------------ |
+| 🟡 TEST | Ignores send window, runs immediately      |
+| 🟢 PROD | Enforces time window and random scheduling |
+
+
 ---  
   
 # Smart Scheduling  
@@ -129,6 +136,7 @@ SEND_WINDOW_END=09:30
 - Random send time is selected
 - Message is sent once within the window
 
+
 ---
 
 # Duplicate Protection
@@ -142,7 +150,8 @@ Uses:
 - Ensures idempotent execution
 
 Example:
-![Duplicate Protection](C:\Users\Falec\OneDrive\Documentos\Python\WhatsApp_Good_Morning\docs\duplicate_protection.jpg.jpg)
+![Duplicate Protection](docs/duplicate_protection1.jpg)
+
 
 ---
 
@@ -160,6 +169,7 @@ Configured via `.env`:
 MIN_PRE_SEND_DELAY_SECONDS=3  
 MAX_PRE_SEND_DELAY_SECONDS=7
 ```
+
 
 ---
 
@@ -206,9 +216,10 @@ MAX_RETRIES=2
 RETRY_DELAY_SECONDS=5  
 ```
 
+
 ---
 
-# 📝 Message Customization
+# Message Customization
 
 Edit:
 
@@ -224,6 +235,7 @@ Good morning!
 Have a great day!
 (...)
 ```
+
 
 ---
 
@@ -251,17 +263,19 @@ source venv\scripts\activate
 pip install -r requirements.txt
 ```
 
+
 ---
 
-# ▶️ Run Locally
+# Run Locally
 
 ```
 python main.py
 ```
 
+
 ---
 
-# 🖥️ Automation (Windows Task Scheduler)
+# Automation (Windows Task Scheduler)
 
 Recommended setup:
 
@@ -275,24 +289,23 @@ The script handles:
 - execution control
 - duplicate prevention
 
----
 
-### Step-by-Step: Task Scheduler Configuration  
+## Step-by-Step: Task Scheduler Configuration  
 
-#### Create Task
+### 1. Create Task
 
 Open: Task Scheduler → Create Task
 
-#### General Tab
+### 2. General Tab
 
 Configure:  
 Name: WhatsApp Sender
 ✔ Run only when user is logged on  
 ✔ Run with highest privileges
 
-![General Tab](C:\Users\Falec\OneDrive\Documentos\Python\WhatsApp_Good_Morning\docs\task_manager_1_general_tab.jpg)
+![General Tab](docs/task_manager_1.jpg)
 
-#### Triggers Tab
+### 3. Triggers Tab
 
 Click **New**:
 Begin the task: On a schedule  
@@ -302,7 +315,7 @@ Time: 08:30 (start of your send window)
 
 Note: The script will choose a random time **inside the configured window**, so this should match the **window start time**.
 
-#### Actions Tab
+### 4. Actions Tab
 
 Click **New**
 Program/script:
@@ -316,16 +329,16 @@ Add arguments:
 
 **Important**: Replace with your actual path.  
 
-![General Tab](C:\Users\Falec\OneDrive\Documentos\Python\WhatsApp_Good_Morning\docs\task_manager_2_actions_tab.jpg)
+![Actions Tab](docs/task_manager_2.jpg)
 
-#### Conditions Tab  
+### 5. Conditions Tab  
   
 Uncheck: Start the task only if the computer is on AC power
 
-![General Tab](C:\Users\Falec\OneDrive\Documentos\Python\WhatsApp_Good_Morning\docs\task_manager_3_conditions_tab.jpg)
+![Conditions Tab](docs/task_manager_3.jpg)
 
-#### Settings Tab  
-  
+### 6. Settings Tab  
+
 Recommended:
 ✔ Allow task to be run on demand
 
@@ -333,9 +346,9 @@ Recommended:
 ✔ If the task fails, restart every: 1 minute  
 ✔ Stop the task if it runs longer than: 1 hour
 
-![General Tab](C:\Users\Falec\OneDrive\Documentos\Python\WhatsApp_Good_Morning\docs\task_manager_4_settings_tab.jpg)
+![Settings Tab](docs/task_manager_4.jpg)
 
-#### Test the Task  
+### 7. Test the Task  
   
 After saving: Right-click → Run
 
@@ -347,7 +360,8 @@ Expected behavior:
 - WhatsApp Web loads  
 - Message is sent  
 - Logs are displayed in real time  
-  
+
+
 ---  
   
 # ⚠️ Important Notes  
@@ -357,7 +371,8 @@ Expected behavior:
 - The task **will NOT run properly in background mode**  
 - Selenium requires an active desktop session  
 - First execution may require scanning the WhatsApp QR code  
-  
+
+
 ---  
 
 # Pro Tips  
@@ -366,6 +381,7 @@ Expected behavior:
 - Keep logs open during initial tests  
 - Avoid running manually + scheduler at the same time  
 - Ensure Chrome is fully closed before execution (to avoid profile conflicts
+
 
 ---
 
@@ -382,6 +398,7 @@ Includes:
 - errors
 - timing
 
+
 ---
 
 # Failure Handling
@@ -391,6 +408,7 @@ Includes:
 - Screenshot + HTML capture on failure
 - Graceful exit on non-retryable errors
 
+
 ---
 
 # Dependencies
@@ -399,6 +417,7 @@ Includes:
 selenium  
 python-dotenv
 ```
+
 
 ---
 
@@ -410,6 +429,7 @@ python-dotenv
 - Config-driven system
 - Fail-safe execution
 - Clean modular architecture
+
 
 ---
 
@@ -424,12 +444,14 @@ It demonstrates **real engineering thinking**:
 - user-behavior simulation  
 - safe automation design
 
+
 ---
 
 # 📌 Status
 
 ✅ Stable (v1.1)  
 🚀 Production-ready for personal automation
+
 
 ---
 

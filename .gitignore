@@ -50,4 +50,3 @@ chrome_profile/
 config/greetings_private.txt
 config/messages_private.txt
 data/last_sent.txt
-data/history.json
