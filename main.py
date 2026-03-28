@@ -8,7 +8,14 @@ from datetime import datetime, timedelta
 from modules.config_loader import load_config
 from modules.logger import log_error, log_info, log_success, log_warning
 from modules.message_generator import generate_message
-from modules.sender_web import send_whatsapp_message
+from modules.sender_web import (
+    WhatsAppChatError,
+    WhatsAppDeliveryError,
+    WhatsAppLoginError,
+    WhatsAppMessageError,
+    WhatsAppSendError,
+    send_whatsapp_message,
+)
 
 
 LAST_SENT_FILE = "data/last_sent.txt"
@@ -112,6 +119,10 @@ def _already_sent_today(logger: SimpleLogger) -> bool:
         with open(LAST_SENT_FILE, "r", encoding="utf-8") as file:
             last_sent_date = file.read().strip()
 
+        if not last_sent_date:
+            logger.warning("last_sent.txt is empty. No valid send record found for today.")
+            return False
+
         if last_sent_date == _today_str():
             logger.warning(f"Message has already been sent today ({last_sent_date}). Skipping execution.")
             return True
@@ -171,14 +182,51 @@ def main() -> None:
             except Exception as exc:
                 logger.error(f"Attempt {attempt}/{total_attempts} failed: {exc}")
 
-                non_retryable_errors = (NameError, SyntaxError, TypeError, ValueError)
+                error_message = str(exc)
+
+                if "ChromeDriver only supports characters in the BMP" in error_message:
+                    logger.error(
+                        "Non-retryable ChromeDriver Unicode limitation detected. "
+                        "Aborting without new attempts."
+                    )
+                    raise
+
+                non_retryable_errors = (
+                    FileNotFoundError,
+                    NameError,
+                    SyntaxError,
+                    TypeError,
+                )
+
+                retryable_whatsapp_errors = (
+                    WhatsAppSendError,
+                    WhatsAppLoginError,
+                    WhatsAppChatError,
+                    WhatsAppMessageError,
+                    WhatsAppDeliveryError,
+                )
 
                 if isinstance(exc, non_retryable_errors):
-                    logger.error("Non-retryable error detected. Aborting without new attempts.")
+                    logger.error("Non-retryable application error detected. Aborting without new attempts.")
+                    raise
+
+                if isinstance(exc, retryable_whatsapp_errors):
+                    if attempt < total_attempts:
+                        logger.info(
+                            f"Retryable WhatsApp/Selenium error detected. "
+                            f"Retrying in {config.retry_delay_seconds} seconds..."
+                        )
+                        time.sleep(config.retry_delay_seconds)
+                        continue
+
+                    logger.error("Retry limit reached for WhatsApp/Selenium error.")
                     raise
 
                 if attempt < total_attempts:
-                    logger.info(f"Retrying in {config.retry_delay_seconds} seconds...")
+                    logger.info(
+                        f"Unexpected runtime error detected. "
+                        f"Retrying in {config.retry_delay_seconds} seconds..."
+                    )
                     time.sleep(config.retry_delay_seconds)
                 else:
                     raise
@@ -191,7 +239,9 @@ def main() -> None:
         total_time = time.time() - start_time
         minutes = int(total_time // 60)
         seconds = int(total_time % 60)
-        logger.info(f"================= Total execution time: {minutes}m{seconds:02d}s ====================")
+        logger.info(f"============================================================================")
+        logger.info(f"====================== Total execution time: {minutes}m{seconds:02d}s =========================")
+        logger.info(f"============================================================================")
 
 
 if __name__ == "__main__":
